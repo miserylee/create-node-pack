@@ -184,6 +184,9 @@ export default class PackageGenerator {
     console.log('Writing template files.');
     const templatePath = path.resolve(__dirname, '../template');
     fs.copySync(templatePath, this._root);
+    // rename .gitignor & .npmignore
+    fs.renameSync(path.resolve(this._root, 'gitignore'), path.resolve(this._root, '.gitignore'));
+    fs.renameSync(path.resolve(this._root, 'npmignore'), path.resolve(this._root, '.npmignore'));
     // write readme
     fs.writeFileSync(path.resolve(this._root, 'README.md'), `# ${this._packageName}
 

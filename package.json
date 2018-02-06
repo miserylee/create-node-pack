@@ -24,7 +24,11 @@
   "license": "MIT",
   "name": "create-node-pack",
   "version": "0.0.2",
+  "description": "Easily create a node package frame with typescript and tslint build-in.",
   "author": "Misery Lee <miserylee@foxmail.com>",
+  "repository": {
+    "git": "https://github.com/miserylee/create-node-pack.git"
+  },
   "main": "./lib/index.js",
   "bin": "./lib/cli.js",
   "scripts": {
