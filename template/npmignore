@@ -1,5 +1,5 @@
 /test
-.gitignore
-tsconfig.json
-tslint.json
+/.gitignore
+/tsconfig.json
+/tslint.json
 /src
