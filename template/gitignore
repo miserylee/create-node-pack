@@ -1,4 +1,5 @@
 node_modules
-lib
-test
-!test/**/*.spec.ts
+/lib
+/test
+!/test/**/*.spec.ts
+yarn-error.log
