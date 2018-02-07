@@ -138,7 +138,7 @@ export default class PackageGenerator {
         start: 'node ./lib/index',
         lint: 'tslint -c tslint.json ./src/**/*.ts',
         test: 'mocha --require ts-node/register ./test/*.spec.ts',
-        prepublishOnly: 'yarn run build && yarn run test',
+        prepublishOnly: 'yarn build',
       },
       'pre-commit': ['prepublishOnly'],
     };
