@@ -189,6 +189,7 @@ export default class PackageGenerator {
     fs.renameSync(path.resolve(this._root, 'npmignore'), path.resolve(this._root, '.npmignore'));
     fs.renameSync(path.resolve(this._root, 'tslint'), path.resolve(this._root, 'tslint.json'));
     fs.renameSync(path.resolve(this._root, 'tsconfig'), path.resolve(this._root, 'tsconfig.json'));
+    fs.renameSync(path.resolve(this._root, 'test', 'tsconfig'), path.resolve(this._root, 'test', 'tsconfig.json'));
     // write readme
     fs.writeFileSync(path.resolve(this._root, 'README.md'), `# ${this._packageName}
 

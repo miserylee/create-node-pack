@@ -11,10 +11,9 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "alwaysStrict": true,
-    "moduleResolution": "node",
-    "outDir": "lib"
+    "moduleResolution": "node"
   },
   "include": [
-    "src/**/*.ts"
+    "**/*.ts"
   ]
 }
