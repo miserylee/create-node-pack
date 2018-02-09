@@ -23,7 +23,7 @@
   },
   "license": "MIT",
   "name": "create-node-pack",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Easily create a node package frame with typescript and tslint build-in.",
   "author": "Misery Lee <miserylee@foxmail.com>",
   "repository": {
@@ -33,7 +33,7 @@
   "bin": "./lib/cli.js",
   "scripts": {
     "build": "yarn run lint && yarn test && tsc",
-    "start": "node ./lib/index",
+    "start": "ts-node ./src/index",
     "lint": "tslint -c tslint.json ./src/**/*.ts",
     "test": "mocha --require ts-node/register ./test/*.spec.ts",
     "prepublishOnly": "yarn run build"
