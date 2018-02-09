@@ -20,6 +20,7 @@ interface IPackageJson {
   'private'?: boolean;
   version: string;
   main: string;
+  typings: string;
   license?: string;
   author?: string;
   description?: string;
@@ -129,13 +130,14 @@ export default class PackageGenerator {
       name: this._packageName,
       version: '0.0.1',
       main: './lib/index.js',
+      typings: './lib/index.d.ts',
       private: this._options.private,
       license: this._options.license,
       author: this._options.author,
       description: this._options.description,
       scripts: {
         build: 'yarn run lint && yarn test && tsc',
-        start: 'node ./lib/index',
+        start: 'ts-node ./src/index',
         lint: 'tslint -c tslint.json ./src/**/*.ts',
         test: 'mocha --require ts-node/register ./test/*.spec.ts',
         prepublishOnly: 'yarn build',
