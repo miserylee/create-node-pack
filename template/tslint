@@ -24,7 +24,8 @@
     "object-literal-sort-keys": false,
     "object-literal-key-quotes": false,
     "no-var-requires": false,
-    "align": false
+    "align": false,
+    "max-line-length": [false]
   },
   "rulesDirectory": []
 }

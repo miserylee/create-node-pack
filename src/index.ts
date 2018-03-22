@@ -39,9 +39,9 @@ export default class PackageGenerator {
     }
   }
 
-  private static _isYarnAvailable(): boolean {
+  private static _isCommandAvailable(command: string): boolean {
     try {
-      execSync('yarnpkg --version', { stdio: 'ignore' });
+      execSync(command, { stdio: 'ignore' });
       return true;
     } catch (e) {
       return false;
@@ -81,6 +81,27 @@ export default class PackageGenerator {
     });
   }
 
+  private static async _runCommand(command: string, args: string[]) {
+    return await new Promise((resolve, reject) => {
+      spawn(command, args, { stdio: 'inherit' }).on('close', code => {
+        if (code !== 0) {
+          reject(new Error(`${chalk.cyan(`${command} ${args.join(' ')}`)} execute failed.`));
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  private static async _initializeGitRepository() {
+    console.log();
+    console.log(chalk.cyan('Initializing git repository.'));
+    console.log();
+    await PackageGenerator._runCommand('git', ['init']);
+    await PackageGenerator._runCommand('git', ['add', '-A']);
+    await PackageGenerator._runCommand('git', ['commit', '-m', '"Initialized package."']);
+  }
+
   private _options: IOptions;
   private _packageJsonPath: string;
   private _packageName: string;
@@ -97,12 +118,15 @@ export default class PackageGenerator {
     this._checkIfOkToGeneratePackage();
     console.log(`Creating a new package in ${chalk.green(this._root)}`);
     this._generatePackageJson();
-    if (!PackageGenerator._isYarnAvailable()) {
+    if (!PackageGenerator._isCommandAvailable('yarnpkg --version')) {
       throw new Error(`You should install yarnpkg first. https://yarnpkg.com/zh-Hans/docs/install`);
     }
     process.chdir(this._root);
     await this._installDevDependencies();
     this._copyTemplate();
+    if (PackageGenerator._isCommandAvailable('git --version')) {
+      await PackageGenerator._initializeGitRepository();
+    }
     console.log(chalk.green('Create package succeed! Enjoy your coding.'));
   }
 
@@ -136,7 +160,8 @@ export default class PackageGenerator {
       author: this._options.author,
       description: this._options.description,
       scripts: {
-        build: 'yarn run lint && yarn test && tsc',
+        build: 'rm -rf ./lib && tsc',
+        prebuild: 'yarn run lint && yarn test',
         start: 'ts-node ./src/index',
         lint: 'tslint -c tslint.json ./src/**/*.ts',
         test: 'mocha --require ts-node/register ./test/*.spec.ts',
@@ -153,7 +178,8 @@ export default class PackageGenerator {
       '@types/mocha', '@types/node', 'mocha', 'typescript',
       'pre-commit', 'ts-node', 'tslint', 'tslint-clean-code',
     ];
-    console.log('Installing dev dependencies.');
+    console.log();
+    console.log(chalk.cyan('Installing dev dependencies.'));
     console.log();
     const isYarnOnline = await PackageGenerator._checkYarnIfOnline();
     const command = 'yarnpkg';
@@ -171,19 +197,12 @@ export default class PackageGenerator {
       console.log();
     }
 
-    await new Promise((resolve, reject) => {
-      spawn(command, args, { stdio: 'inherit' }).on('close', code => {
-        if (code !== 0) {
-          reject(new Error(`${chalk.cyan(`${command} ${args.join(' ')}`)} execute failed.`));
-        } else {
-          resolve();
-        }
-      });
-    });
+    await PackageGenerator._runCommand(command, args);
   }
 
   private _copyTemplate() {
-    console.log('Writing template files.');
+    console.log();
+    console.log(chalk.cyan('Writing template files.'));
     const templatePath = path.resolve(__dirname, '../template');
     fs.copySync(templatePath, this._root);
     // rename .gitignor & .npmignore
@@ -197,4 +216,5 @@ export default class PackageGenerator {
 
 ##  ![NPM version](https://img.shields.io/npm/v/${this._packageName}.svg?style=flat)`);
   }
+
 }
