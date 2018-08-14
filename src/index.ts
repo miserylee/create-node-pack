@@ -133,7 +133,7 @@ export default class PackageGenerator {
   private _checkIfOkToGeneratePackage() {
     // Check root empty.
     fs.ensureDirSync(this._root);
-    const files = fs.readdirSync(this._root);
+    const files = fs.readdirSync(this._root).filter(v => v[0] !== '.');
     if (files.length > 0) {
       throw new Error(`${this._root} is not empty.`);
     }
@@ -153,16 +153,18 @@ export default class PackageGenerator {
     const packageJson: IPackageJson = {
       name: this._packageName,
       version: '0.0.1',
-      main: './lib/index.js',
-      typings: './lib/index.d.ts',
+      main: './build/index.js',
+      typings: './build/index.d.ts',
       private: this._options.private,
       license: this._options.license,
       author: this._options.author,
       description: this._options.description,
       scripts: {
-        build: 'rm -rf ./lib && tsc',
-        prebuild: 'yarn run lint && yarn test',
-        start: 'ts-node ./src/index',
+        build: 'tsc',
+        prebuild: 'yarn run lint && yarn test && yarn run clean',
+        clean: 'rm -rf ./build',
+        start: 'node ./build/index',
+        'start-ts': 'ts-node ./src/index',
         lint: 'tslint -c tslint.json ./src/**/*.ts',
         test: 'mocha --require ts-node/register ./test/*.spec.ts',
         prepublishOnly: 'yarn build',
