@@ -7,28 +7,36 @@ import * as path from 'path';
 import * as url from 'url';
 import * as validateProjectName from 'validate-npm-package-name';
 
+export enum E_PROJECT_TYPE {
+  npm,
+  koa,
+}
+
 export interface IOptions {
   packageName: string;
   description?: string;
   license?: string;
   author?: string;
   'private'?: boolean;
+  projectType: E_PROJECT_TYPE;
 }
 
 interface IPackageJson {
   name: string;
   'private'?: boolean;
-  version: string;
+  version?: string;
   main: string;
-  typings: string;
+  typings?: string;
   license?: string;
   author?: string;
   description?: string;
   scripts: {
     [script: string]: string;
   };
-  'pre-commit': string[];
+  'pre-commit'?: string[];
 }
+
+const TEMPLATES_ROOT = path.resolve(__dirname, '../templates');
 
 export default class PackageGenerator {
   private static _printValidationResults(results?: string[]) {
@@ -97,6 +105,12 @@ export default class PackageGenerator {
     console.log();
     console.log(chalk.cyan('Initializing git repository.'));
     console.log();
+  }
+
+  private static async _commitRepository() {
+    console.log();
+    console.log(chalk.cyan('Commit git repository.'));
+    console.log();
     await PackageGenerator._runCommand('git', ['init']);
     await PackageGenerator._runCommand('git', ['add', '-A']);
     await PackageGenerator._runCommand('git', ['commit', '-m', '"Initialized package."']);
@@ -106,26 +120,35 @@ export default class PackageGenerator {
   private _packageJsonPath: string;
   private _packageName: string;
   private _root: string;
+  private _templateRoot: string;
 
   constructor(options: IOptions) {
     this._options = options;
     this._root = path.resolve(options.packageName);
     this._packageName = path.basename(this._root);
     this._packageJsonPath = path.resolve(this._root, 'package.json');
+    this._templateRoot = path.resolve(TEMPLATES_ROOT, E_PROJECT_TYPE[options.projectType]);
   }
 
   public async exec() {
     this._checkIfOkToGeneratePackage();
-    console.log(`Creating a new package in ${chalk.green(this._root)}`);
+    console.log(`Creating a new package in ${chalk.green(this._root)}. Project type is ${chalk.green(E_PROJECT_TYPE[this._options.projectType])}`);
     this._generatePackageJson();
-    if (!PackageGenerator._isCommandAvailable('yarnpkg --version')) {
-      throw new Error(`You should install yarnpkg first. https://yarnpkg.com/zh-Hans/docs/install`);
+    if (!PackageGenerator._isCommandAvailable('yarn --version')) {
+      throw new Error(`You should install yarn first. https://yarnpkg.com/zh-Hans/docs/install`);
     }
     process.chdir(this._root);
-    await this._installDevDependencies();
-    this._copyTemplate();
-    if (PackageGenerator._isCommandAvailable('git --version')) {
+    const isGitAvailable = PackageGenerator._isCommandAvailable('git --version');
+    if (isGitAvailable) {
       await PackageGenerator._initializeGitRepository();
+    }
+    await this._installDevDependencies();
+    if (this._options.projectType === E_PROJECT_TYPE.koa) {
+      await this._installDependenciesOfKoaProject();
+    }
+    this._copyTemplate();
+    if (isGitAvailable) {
+      await PackageGenerator._commitRepository();
     }
     console.log(chalk.green('Create package succeed! Enjoy your coding.'));
   }
@@ -152,40 +175,86 @@ export default class PackageGenerator {
   private _generatePackageJson() {
     const packageJson: IPackageJson = {
       name: this._packageName,
-      version: '0.0.1',
       main: './build/index.js',
-      typings: './build/index.d.ts',
-      private: this._options.private,
-      license: this._options.license,
-      author: this._options.author,
-      description: this._options.description,
       scripts: {
         build: 'tsc',
-        prebuild: 'yarn run lint && yarn test && yarn run clean',
         clean: 'rm -rf ./build',
         start: 'node ./build/index',
         'start-ts': 'ts-node ./src/index',
         lint: 'tslint -c tslint.json ./src/**/*.ts',
-        test: 'mocha --require ts-node/register ./test/*.spec.ts',
-        prepublishOnly: 'yarn build',
       },
-      'pre-commit': ['prepublishOnly'],
     };
+
+    const projectType = this._options.projectType;
+    switch (projectType) {
+      case E_PROJECT_TYPE.npm:
+        packageJson.version = '0.0.1';
+        packageJson.private = !!this._options.private;
+        packageJson.license = this._options.license;
+        packageJson.author = this._options.author;
+        packageJson.description = this._options.description;
+        packageJson.typings = './build/index.d.ts';
+        packageJson.scripts.prebuild = 'yarn run lint && yarn test && yarn run clean';
+        packageJson.scripts.prepublishOnly = 'yarn build';
+        packageJson.scripts.test = 'mocha --require ts-node/register ./test/*.spec.ts';
+        packageJson['pre-commit'] = ['prepublishOnly'];
+        break;
+      case E_PROJECT_TYPE.koa:
+        packageJson.private = true;
+        packageJson.scripts.prebuild = 'yarn run lint && yarn run clean';
+        packageJson['pre-commit'] = ['build'];
+        break;
+      default:
+    }
 
     fs.writeJsonSync(this._packageJsonPath, packageJson, { spaces: 2 });
   }
 
   private async _installDevDependencies() {
+    console.log();
     const dependencies = [
-      '@types/mocha', '@types/node', 'mocha', 'typescript',
+      '@types/node', 'typescript',
       'pre-commit', 'ts-node', 'tslint', 'tslint-clean-code',
     ];
-    console.log();
+    const projectType = this._options.projectType;
+    switch (projectType) {
+      case E_PROJECT_TYPE.npm:
+        dependencies.push('@types/mocha', 'mocha');
+        break;
+      case E_PROJECT_TYPE.koa:
+        break;
+      default:
+    }
     console.log(chalk.cyan('Installing dev dependencies.'));
     console.log();
+    await this._install(dependencies);
+  }
+
+  private async _installDependenciesOfKoaProject() {
+    console.log();
+    const deps = [
+      '@types/jsonwebtoken', 'jsonwebtoken',
+      '@types/kcors', 'kcors',
+      '@types/koa', 'koa',
+      '@types/koa-compress', 'koa-compress',
+      '@types/mongoose', 'mongoose',
+      '@types/dotenv', 'dotenv',
+      'koa-erz-logger', 'koact',
+      'mongoose-explain-checker', 'mongoose-finder-enhancer',
+      'schema.io', 'erz',
+    ];
+    console.log(chalk.cyan('Installing dependencies of koa project.'));
+    console.log();
+    await this._install(deps, false);
+  }
+
+  private async _install(dependencies: string[], dev: boolean = true) {
     const isYarnOnline = await PackageGenerator._checkYarnIfOnline();
-    const command = 'yarnpkg';
-    const args = ['add', '--exact', '-D'];
+    const command = 'yarn';
+    const args = ['add', '--exact'];
+    if (dev) {
+      args.push('-D');
+    }
     if (!isYarnOnline) {
       args.push('--offline');
     }
@@ -205,18 +274,29 @@ export default class PackageGenerator {
   private _copyTemplate() {
     console.log();
     console.log(chalk.cyan('Writing template files.'));
-    const templatePath = path.resolve(__dirname, '../template');
-    fs.copySync(templatePath, this._root);
+    fs.copySync(this._templateRoot, this._root);
     // rename .gitignor & .npmignore
     fs.renameSync(path.resolve(this._root, 'gitignore'), path.resolve(this._root, '.gitignore'));
-    fs.renameSync(path.resolve(this._root, 'npmignore'), path.resolve(this._root, '.npmignore'));
     fs.renameSync(path.resolve(this._root, 'tslint'), path.resolve(this._root, 'tslint.json'));
     fs.renameSync(path.resolve(this._root, 'tsconfig'), path.resolve(this._root, 'tsconfig.json'));
-    fs.renameSync(path.resolve(this._root, 'test', 'tsconfig'), path.resolve(this._root, 'test', 'tsconfig.json'));
-    // write readme
-    fs.writeFileSync(path.resolve(this._root, 'README.md'), `# ${this._packageName}
+
+    switch (this._options.projectType) {
+      case E_PROJECT_TYPE.koa:
+        fs.renameSync(path.resolve(this._root, 'env'), path.resolve(this._root, '.env'));
+        // write readme
+        fs.writeFileSync(path.resolve(this._root, 'README.md'), `# ${this._packageName}`);
+        break;
+      case E_PROJECT_TYPE.npm:
+        fs.renameSync(path.resolve(this._root, 'npmignore'), path.resolve(this._root, '.npmignore'));
+        fs.renameSync(path.resolve(this._root, 'test', 'tsconfig'), path.resolve(this._root, 'test', 'tsconfig.json'));
+        // write readme
+        fs.writeFileSync(path.resolve(this._root, 'README.md'), `# ${this._packageName}
 
 ##  ![NPM version](https://img.shields.io/npm/v/${this._packageName}.svg?style=flat)`);
+        break;
+      default:
+    }
+
   }
 
 }

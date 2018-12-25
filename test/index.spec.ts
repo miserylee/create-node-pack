@@ -3,7 +3,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs-extra';
 import 'mocha';
 import * as path from 'path';
-import PackageGenerator, { IOptions } from '../src';
+import PackageGenerator, { E_PROJECT_TYPE, IOptions } from '../src';
 
 const packageName = 'demo';
 const packagePath = path.resolve(__dirname, '..', packageName);
@@ -12,6 +12,7 @@ const packageJsonPath = path.resolve(packagePath, 'package.json');
 const options: IOptions = {
   packageName: packagePath,
   license: 'MIT',
+  projectType: E_PROJECT_TYPE.npm,
 };
 
 describe('PackageGenerator', function() {

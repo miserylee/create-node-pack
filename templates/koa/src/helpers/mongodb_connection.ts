@@ -1,12 +1,12 @@
-import * as mongoose from 'mongoose';
 import { createConnection, Schema } from 'mongoose';
 
-mongoose.plugin((schema: Schema) => {
-  schema.set('timestamps', true);
-});
-mongoose.plugin(require('mongoose-finder-enhancer'));
-mongoose.plugin(require('mongoose-explain-checker'));
-
 const connection = createConnection(process.env.MONGODB_URI!, { useNewUrlParser: true });
+
+export const enhanceSchema = (schema: Schema) => {
+  schema.set('timestamps', true);
+  schema.plugin(require('mongoose-finder-enhancer'));
+  schema.plugin(require('mongoose-explain-checker'), { connection });
+  return schema;
+};
 
 export default connection;
