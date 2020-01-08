@@ -11,7 +11,8 @@
     "strictNullChecks": true,
     "alwaysStrict": true,
     "moduleResolution": "node",
-    "outDir": "build"
+    "outDir": "build",
+    "sourceMap": true
   },
   "include": [
     "src/**/*.ts"

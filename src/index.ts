@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import chalk = require('chalk');
 import { execSync } from 'child_process';
 import * as spawn from 'cross-spawn';
 import * as dns from 'dns';
@@ -105,13 +105,13 @@ export default class PackageGenerator {
     console.log();
     console.log(chalk.cyan('Initializing git repository.'));
     console.log();
+    await PackageGenerator._runCommand('git', ['init']);
   }
 
   private static async _commitRepository() {
     console.log();
     console.log(chalk.cyan('Commit git repository.'));
     console.log();
-    await PackageGenerator._runCommand('git', ['init']);
     await PackageGenerator._runCommand('git', ['add', '-A']);
     await PackageGenerator._runCommand('git', ['commit', '-m', '"Initialized package."']);
   }

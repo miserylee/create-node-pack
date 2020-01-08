@@ -3,7 +3,7 @@ import Signals = NodeJS.Signals;
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 if (IS_DEV) {
-  require('dotenv').load();
+  require('dotenv').config();
 }
 
 import * as Application from 'koa';
@@ -35,7 +35,7 @@ const server = app.listen(port, () => {
   console.log(`Server started! Listening on port ${port}`);
 });
 
-const preExit = (error: Error | Signals) => {
+const preExit = (error: Error | Signals | {} | null | undefined) => {
   if (error instanceof Error) {
     console.error(error);
   }

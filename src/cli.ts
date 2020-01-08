@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import chalk from 'chalk';
+import chalk = require('chalk');
 import * as commander from 'commander';
 import * as fs from 'fs-extra';
 import * as path from 'path';
