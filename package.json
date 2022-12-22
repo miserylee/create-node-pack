@@ -9,7 +9,7 @@
     "@types/mocha": "^5.2.7",
     "@types/mongoose": "^5.5.36",
     "@types/node": "^13.1.2",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "kcors": "^2.2.2",
     "koa": "^2.11.0",
     "koa-compress": "^3.0.0",
